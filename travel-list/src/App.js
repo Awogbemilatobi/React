@@ -7,21 +7,15 @@ import { useState } from "react";
 ];*/
 
 export default function App() {
-  const [items, setItems] = useState([]);
-
-  function handleDeleteAll() {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete all items?"
-    );
-
-    if (confirmed) setItems([]);
-  }
+  const [items, setItems] = useState([]); //use case of lifting up passed to parkingList component
 
   function handleAddItems(item) {
+    //the setter passed to the Form component
     setItems((items) => [...items, item]);
   }
 
-  function handleDeleteItem(id) {
+  function handleDeleteItems(id) {
+    //another case of passing down functions twice!
     setItems((items) => items.filter((item) => item.id !== id));
   }
 
@@ -33,17 +27,21 @@ export default function App() {
     );
   }
 
+  function handleDeleteList() {
+    setItems([]);
+  }
+
   return (
     <div className="app">
       <Logo />
       <Form handleAddItems={handleAddItems} />
       <PackingList
         items={items}
-        handleDeleteItem={handleDeleteItem}
+        handleDeleteItems={handleDeleteItems}
         handleToggleItem={handleToggleItem}
-        handleDeleteAll={handleDeleteAll}
+        handleDeleteList={handleDeleteList}
       />
-      <Stats items={items} />
+      <Stats />
     </div>
   );
 }
@@ -64,9 +62,8 @@ function Form({ handleAddItems }) {
     const newItem = { description, quantity, packed: false, id: Date.now() };
 
     handleAddItems(newItem);
-
-    setDescription(""); //set back to default
-    setQuantity(1); // set back to default
+    setDescription("");
+    setQuantity(1);
   }
 
   return (
@@ -74,8 +71,10 @@ function Form({ handleAddItems }) {
       <h3>What do you need for your 😍 trip?</h3>
       <select
         value={quantity}
-        onChange={(e) => setQuantity(Number(e.target.value))} //takes the value from the select field and set it as new value of description
+        onChange={(e) => setQuantity(Number(e.target.value))}
       >
+        {" "}
+        {/*e.target.value returns a string, convert it if you want a number*/}
         {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
           <option value={num} key={num}>
             {num}
@@ -86,7 +85,7 @@ function Form({ handleAddItems }) {
         type="text"
         placeholder="Item..."
         value={description}
-        onChange={(e) => setDescription(e.target.value)} //takes the value from the input field and set it as new value of description
+        onChange={(e) => setDescription(e.target.value)} //receives the text written in the input field and sets it as the new description value
       />
       <button>Add</button>
     </form>
@@ -95,23 +94,27 @@ function Form({ handleAddItems }) {
 
 function PackingList({
   items,
-  handleDeleteItem,
+  handleDeleteItems,
   handleToggleItem,
-  handleDeleteAll,
+  handleDeleteList,
 }) {
   const [sortBy, setSortBy] = useState("input");
 
-  let sortedItems;
+  let sortedItems; //derived state
 
   if (sortBy === "input") sortedItems = items;
+
   if (sortBy === "description")
+    //to sort by description. that is, alphabetical order
     sortedItems = items
       .slice()
       .sort((a, b) => a.description.localeCompare(b.description));
+
   if (sortBy === "packed")
     sortedItems = items
       .slice()
       .sort((a, b) => Number(a.packed) - Number(b.packed));
+
   return (
     <div className="list">
       <ul>
@@ -119,7 +122,7 @@ function PackingList({
           <Item
             item={item}
             key={item.id}
-            handleDeleteItem={handleDeleteItem}
+            handleDeleteItems={handleDeleteItems}
             handleToggleItem={handleToggleItem}
           />
         ))}
@@ -132,13 +135,13 @@ function PackingList({
           <option value="packed">Sort by packed status</option>
         </select>
 
-        <button onClick={() => handleDeleteAll()}>Clear list</button>
+        <button onClick={() => handleDeleteList()}>Clear list</button>
       </div>
     </div>
   );
 }
 
-function Item({ item, handleDeleteItem, handleToggleItem }) {
+function Item({ item, handleDeleteItems, handleToggleItem }) {
   return (
     <li>
       <input
@@ -149,29 +152,17 @@ function Item({ item, handleDeleteItem, handleToggleItem }) {
         }}
       />
       <span style={item.packed ? { textDecoration: "line-through" } : {}}>
-        {item.quantity}
-        {item.description}
+        {item.quantity} {item.description}
       </span>
-      <button onClick={() => handleDeleteItem(item.id)}>❌</button>
+      <button onClick={() => handleDeleteItems(item.id)}>❌</button>
     </li>
   );
 }
 
-function Stats({ items }) {
-  if (!items.length)
-    return <p className="stats">Start adding some items to your list ✈</p>;
-
-  const numItems = items.length; // derived state
-  const numPacked = items.filter((item) => item.packed).length;
-  const numPercent = Math.round((numPacked / numItems) * 100);
+function Stats() {
   return (
     <footer className="stats">
-      <em>
-        {numPercent === 100
-          ? "You got everything! Ready to go 🚀."
-          : `👜You have ${numItems} items on your list, and you already packed 
-        ${numPacked} (${numPercent}%)`}
-      </em>
+      <em>👜 You have X items on your list, and you already packed X (X%)</em>
     </footer>
   );
 }

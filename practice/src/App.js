@@ -1,87 +1,88 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { createRoot } from "react-dom/client";
 import "./styles.css";
-
-const tipOptions = {
-  "Disatisfied (0%)": 0,
-  "it was ok (5%)": 0.05,
-  "it was good (10%)": 0.1,
-  "Absolutely amazing (20%)": 0.2,
-};
-
-const options = Object.keys(tipOptions);
+import dayjs from "https://unpkg.com/dayjs@1.11.10/esm/index.js";
 
 export default function App() {
-  const [billAmount, setBillAmount] = useState(0);
-  const [serviceRating, setServiceRating] = useState("");
-  const [friendRating, setFriendRating] = useState("");
+  const [count, setCount] = useState(0);
+  const [step, setStep] = useState(1);
+  const today = dayjs().format("ddd MMM DD YYYY");
 
-  const handleBillChange = (event) => {
-    setBillAmount(event.target.value);
-  };
+  function updateCount() {
+    step > 0 && setCount((count) => count + step);
+    step === 0 && setCount((count) => count + 1);
+    step < 0 && setCount((count) => count + step);
+  }
 
-  const handleServiceChange = (event) => {
-    setServiceRating(event.target.value);
-  };
+  function updateStep() {
+    setStep((step) => step + 1);
+  }
 
-  const handleFriendChange = (event) => {
-    setFriendRating(event.target.value);
-  };
+  function downDateStep() {
+    setStep((step) => step - 1);
+  }
 
-  const calculateTip = (rating, bill) => {
-    return bill * tipOptions[rating];
-  };
+  function downDateCount() {
+    step > 0 && setCount((count) => count - step);
+    step === 0 && setCount((count) => count - 1);
+    step < 0 && setCount((count) => count + step);
+  }
+
+  /* Shorter Alternative
+    function updateCount() {
+      setCount((prevCount) => prevCount + step || 1);
+    }
+
+    function updateStep() {
+      setStep((prevStep) => prevStep + 1);
+    }
+
+    function downDateStep() {
+      setStep((prevStep) => prevStep - 1);
+    }
+
+    function downDateCount() {
+      setCount((prevCount) => prevCount + step || 1);
+    }*/
 
   return (
-    <div>
-      <form>
-        <label>How much was the bill?</label>
-        <input type="number" value={billAmount} onChange={handleBillChange} />
-      </form>
-
+    <div className="container">
       <div>
-        <label>How did you like the service?</label>
-        <select value={serviceRating} onChange={handleServiceChange}>
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <button onClick={downDateStep}>-</button>
+        <span>Step: {step}</span>
+        <button onClick={updateStep}>+</button>
       </div>
-
-      <form>
-        <label>How did your friend like the service?</label>
-        <select value={friendRating} onChange={handleFriendChange}>
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </form>
-
-      <DisplayInput
-        bill={Number(billAmount)}
-        service={serviceRating}
-        friend={friendRating}
-        calculateTip={calculateTip} // Pass the calculateTip function to DisplayInput
-      />
+      <div>
+        <button onClick={downDateCount}>-</button>
+        <span>Count: {count}</span>
+        <button onClick={updateCount}>+</button>
+      </div>
+      {count === 0 && (
+        <p>
+          Today is {dayjs(today).add(count, "day").format("ddd MMM DD YYYY")}
+        </p>
+      )}
+      {count < 0 && (
+        <p>
+          {Math.abs(count)} days ago was{" "}
+          {dayjs(today).add(count, "day").format("ddd MMM DD YYYY")}
+        </p>
+      )}
+      {count > 0 && (
+        <p>
+          {count} days from today will be{" "}
+          {dayjs(today).add(count, "day").format("ddd MMM DD YYYY")}
+        </p>
+      )}
     </div>
   );
 }
 
-function DisplayInput({ bill, service, friend, calculateTip }) {
-  const tipForYou = calculateTip(service, bill);
-  const tipForFriend = calculateTip(friend, bill);
+const rootElement = document.getElementById("root");
+const root = createRoot(rootElement);
 
-  const totalBill = Math.round(bill + tipForYou + tipForFriend);
-  const totalTip = Math.round(tipForFriend + tipForYou);
-
-  return (
-    <div>
-      <h3>
-        You pay ${totalBill} (${bill} + ${totalTip} tip)
-      </h3>
-    </div>
-  );
-}
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
